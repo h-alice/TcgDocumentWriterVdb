@@ -27,6 +27,7 @@ library
   exposed-modules:
       Weaviate.GraphQL
       Weaviate.Query
+      Weaviate.Client
   other-modules:
       Paths_vdb_be
   autogen-modules:

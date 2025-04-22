@@ -6,9 +6,6 @@ module Weaviate.Query (
     setAlpha
 ) where
 
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE InstanceSigs #-}
-
 import qualified Data.Text   as T
 import Data.Text             (Text)
 
