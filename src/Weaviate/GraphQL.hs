@@ -9,18 +9,11 @@ module Weaviate.GraphQL (
 ) where
 
 
-import Weaviate.Query (HybridQuery(..))
 
 import qualified Data.Aeson           as A
-import qualified Data.ByteString.Lazy as BL
-import qualified Network.Wreq         as W
-import qualified Data.Text            as T
-import Control.Lens                 ((&), (.~), (^.)) -- For wreq operators
-import Control.Exception            (try, SomeException (SomeException))
-import Data.Text                    (Text, pack, unpack)
-import Data.Text.Encoding           (decodeUtf8)
+import Data.Text                    (Text)
 import Text.Printf                  (printf)
-import Data.Aeson                   (Value, object, (.=), ToJSON(toJSON), FromJSON(parseJSON), withObject, (.:))
+import Data.Aeson                   (Value, object, (.=), ToJSON(toJSON))
 import Data.Maybe                   (fromMaybe)
 
 
