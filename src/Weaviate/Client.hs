@@ -1,15 +1,22 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-} -- Optional: for cleaner record construction/pattern matching
+{-# LANGUAGE DeriveGeneric     #-} -- Optional: for generic deriving (though manual is clearer here)
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE InstanceSigs #-}
 
 
 module Weaviate.Client (
-    weaviateHybridSearch
+    weaviateHybridSearch,
+    getTopNDocuments
 ) where
 
 
 import Weaviate.Query (HybridQuery(..))
 import Weaviate.GraphQL (mkGraphQLQueryCL, GraphQLRequest(..))
+import Weaviate.Response (WeaviateResponse(..), GetResponseData(..), GetDocument(..), QueryResult(..), AdditionalInfo(..))
 
+import Data.Aeson (eitherDecode) 
 
 import qualified Data.Aeson           as A
 import qualified Data.ByteString.Lazy as BL
@@ -66,4 +73,20 @@ weaviateHybridSearch weaviateUrl hq = do
                     -- Handle non-2xx HTTP status codes
                     return $ Left (printf "Weaviate returned error %d: %s\nBody: %s"
                                     statusCode (unpack $ decodeUtf8 statusMsg) (show body))
+
+getTopNDocuments :: Either String Value -> Int -> Either String [T.Text]
+getTopNDocuments jsonResponse n = do
+    -- Decode the JSON response to extract the results
+    case jsonResponse of
+        Left err -> Left err
+        Right json -> do
+            case eitherDecode $ A.encode json :: Either String WeaviateResponse of
+                Left err -> Left $ "Failed to decode JSON due to: " ++ err
+                Right wr -> do
+                    let results = gdResults . grdGet . wrData $ wr
+                    if length results == 0
+                        then Left $ "No similar documents found."
+                        else if length results < n
+                            then Right $ take (length results) (map (\(doc :: QueryResult) -> qrContent doc) results)
+                        else Right $ take n (map (\(doc :: QueryResult) -> qrContent doc) results)
 
