@@ -5,7 +5,7 @@
 -- Module      : Weaviate.GraphQL
 -- Description : Constructs GraphQL query strings and request bodies for Weaviate.
 -- Copyright   : (c) 2025 Wayne "h-alice" Hong
--- License     : MIT
+-- License     : AGPL
 -- Maintainer  : admin@halice.art
 -- Stability   : experimental
 -- Portability : POSIX
