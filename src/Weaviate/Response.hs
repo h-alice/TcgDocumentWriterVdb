@@ -160,15 +160,3 @@ instance FromJSON WeaviateResponse where
     parseJSON :: Value -> AesonTypes.Parser WeaviateResponse
     parseJSON = withObject "WeaviateResponse" $ \v ->
         WeaviateResponse <$> v .: "data" -- Uses GetResponseData's FromJSON instance
-
--- Example Usage (Consider moving to tests or a separate Example module)
--- main :: IO ()
--- main = do
---    let jsonResponse = "..." -- Your JSON BL.ByteString here
---    case eitherDecode jsonResponse :: Either String WeaviateResponse of
---        Left err -> putStrLn $ "Decoding failed: " ++ err
---        Right decodedResponse -> do
---            putStrLn "Decoding successful!"
---            -- Access results:
---            let results = gdResults . grdGet . wrData $ decodedResponse
---            mapM_ (print . addId . qrAdditional) results
