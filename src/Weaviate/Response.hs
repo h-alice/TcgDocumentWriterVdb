@@ -8,7 +8,7 @@
 -- Module      : Weaviate.Response
 -- Description : Data types and JSON parsing for Weaviate GraphQL 'Get' responses.
 -- Copyright   : (c) 2025 Wayne "h-alice" Hong
--- License     : AGPL
+-- License     : AGPL-3.0
 -- Maintainer  : admin@halice.art
 -- Stability   : experimental
 -- Portability : POSIX
