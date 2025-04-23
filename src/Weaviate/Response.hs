@@ -4,7 +4,7 @@
 {-# LANGUAGE InstanceSigs #-}
 
 -- |
--- Module      : Weaviate.Parser
+-- Module      : Weaviate.Response
 -- Description : Defines types and FromJSON instances for parsing Weaviate GraphQL 'Get' responses.
 -- Copyright   : (c) 2025 Wayne "h-alice" Hong
 -- License     : MIT -- Choose an appropriate license
