@@ -34,8 +34,6 @@ module Weaviate.Query (
 
 import qualified Data.Text as T
 import Data.Text (Text)
-import Data.Either (Either (..)) -- Import constructors for pattern matching if needed
-import Control.Monad ((>>=)) -- Make sure bind is available
 -- Or: import Data.Function ((&))
 
 -- | Parameters for a Weaviate hybrid search query.
