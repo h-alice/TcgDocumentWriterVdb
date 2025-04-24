@@ -1,36 +1,31 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main (main) where
-    
 
-import Weaviate.Query as WQ (
-    hyQueryCollection,
-    setLimit,
-    setUserPrompt,
-    setAlpha
-    )
+ -- Optional: if using generic deriving
+import qualified Data.Text               as T (Text)
+import qualified Data.Text.IO            as TIO
 
-import Weaviate.Client as WC (weaviateHybridSearch) -- Import the function to send the query
+import Weaviate.Query as WQ ( mkHybridQuery, setLimit, setUserPrompt, setAlpha )
 
-import qualified Data.Aeson           as A
-import qualified Data.ByteString.Lazy as BL
+import Weaviate.Client as WC (weaviateHybridSearch, getTopNDocuments) -- Import the function to send the query
+
 
 -- Example Usage (main function)
 main :: IO ()
 main = do
+    let mainQuery = "居家辦公" :: T.Text -- Example query
+
     putStrLn "Building Weaviate Hybrid Query..."
 
-    -- Example 1: Basic query with defaults
-    let query =  WQ.setLimit 2 $ WQ.setAlpha 0.5 $ WQ.setUserPrompt "生涯規劃離職" $ WQ.hyQueryCollection "Document" -- Collection name
-    putStrLn $ "Query: " ++ show query
+    let query =  WQ.mkHybridQuery "Document" >>= WQ.setLimit 2 >>= WQ.setAlpha 0.35 >>= WQ.setUserPrompt mainQuery
     let weaviateEndpoint = "http://localhost:8080/v1/graphql" -- Adjust if your Weaviate runs elsewhere
     searchResult <- WC.weaviateHybridSearch weaviateEndpoint query
-    putStrLn "\n--- Weaviate Response ---"
+    putStrLn "--- Fetched Documents ---"
 
-    case searchResult of
-        Left errMsg -> putStrLn $ "Error: " ++ errMsg
-        Right jsonResponse -> do
-            putStrLn "Success! Received JSON response:"
-            -- Encode the JSON response
-            BL.putStr (A.encode jsonResponse)
-            putStrLn "\n--- End Response ---"
+    case getTopNDocuments searchResult 5 of
+        Left err -> putStrLn $ "Error fetching documents: " ++ err
+        Right decodedResponse -> do
+            mapM_ TIO.putStrLn decodedResponse
+
