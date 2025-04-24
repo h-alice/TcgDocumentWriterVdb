@@ -3,7 +3,7 @@
 
 module Main (main) where
 
- -- Optional: if using generic deriving
+-- Optional: if using generic deriving
 import qualified Data.Text               as T (Text)
 import qualified Data.Text.IO            as TIO
 
