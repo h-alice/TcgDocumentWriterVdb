@@ -50,7 +50,12 @@ module Reranker.Client (
     -- * Response Types
     RerankResponse(..),
     RerankResult(..),
-    RerankUsage(..)
+    RerankUsage(..),
+
+    -- * Helper Functions
+    sortResults,
+    toIndices
+
 ) where
 
 import GHC.Generics (Generic) -- For deriving Show, Eq
@@ -66,6 +71,8 @@ import Text.Printf                  (printf)
 import Data.Aeson                   ( FromJSON(..), ToJSON(..)
                                     , Value, object, (.=), (.:)
                                     , withObject )
+import Data.List                   (sortBy)
+import Data.Ord                    (comparing)
 
 -- | The default model name used for reranking requests.
 defaultRerankerModel :: T.Text
@@ -147,6 +154,20 @@ instance FromJSON RerankResponse where
         <*> v .: "object"
         <*> v .: "usage"
         <*> v .: "results"
+
+-- ========================================================================== --
+-- Helper Function                                                            --
+-- ========================================================================== --
+
+-- | Sorts the reranked results by their relevance score in descending order.
+--   The results are sorted in-place, modifying the original list.
+sortResults :: [RerankResult] -> [RerankResult]
+sortResults = sortBy (comparing (negate . rrRelevanceScore)) 
+
+-- | Converts a list of 'RerankResult' to a list of their original indices.
+--   This is useful for mapping the reranked results back to the original documents.
+toIndices :: [RerankResult] -> [Int]
+toIndices = map rrIndex
 
 -- ========================================================================== --
 -- Client Function                                                            --

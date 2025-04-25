@@ -1,8 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 
 -- |
 -- Module      : Weaviate.Client
@@ -70,7 +69,7 @@
 module Weaviate.Client (
     -- * Primary Client Functions
     weaviateHybridSearch,
-    getTopNDocuments
+    getDocuments
 ) where
 
 -- Internal Library Imports
@@ -139,21 +138,15 @@ weaviateHybridSearch weaviateUrl (Right hq) = do
                     in return $ Left (printf "Weaviate request failed with status %d: %s Response body: %s"
                                     statusCode (T.unpack statusMsgText) (show responseBody))
 
-
-getTopNDocuments :: Either String A.Value 
-                    -> Int 
+getDocuments :: Either String A.Value 
                     -> Either String [T.Text]
 
 -- Case 1: Input was already an error from weaviateHybridSearch pipeline      
-getTopNDocuments (Left prevErr) _ =
+getDocuments (Left prevErr) =
     Left ("Cannot get documents because previous step failed: " ++ prevErr) -- No 'return'
 
--- Case 2: User asked for 0 documents
-getTopNDocuments (Right _) 0 =  -- Queue for no document, what are you doing?
-    Right [] -- Return an empty list as you desired.
-
--- Case 3: Valid JSON input from previous step and n > 0
-getTopNDocuments (Right jsonValue) n | n > 0 =
+-- Case 2: Valid JSON input from previous step
+getDocuments (Right jsonValue) =
     -- Attempt to parse the JSON Value directly using fromJSON
     case A.fromJSON jsonValue :: A.Result WeaviateResponse of
             A.Error parseErr -> Left $ "Failed to parse JSON Value into WeaviateResponse: " ++ parseErr
@@ -163,7 +156,4 @@ getTopNDocuments (Right jsonValue) n | n > 0 =
                     -- Check if empty and return results
                     in if null results
                         then Left "No similar documents found in the response."
-                        else Right $ take n (map qrContent results)
-
--- Catch-all / Invalid N case
-getTopNDocuments _ n = Left $ "Invalid number of documents requested: " ++ show n ++ ". Must be >= 0."
+                        else Right $ map qrContent results
