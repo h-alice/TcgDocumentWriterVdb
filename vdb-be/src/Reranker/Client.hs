@@ -13,39 +13,32 @@
 -- Stability   : experimental
 -- Portability : POSIX
 --
---  -- This module provides functionality to send requests to a reranking API
---  -- (as specified by the endpoint URL) and parse the corresponding responses.
---  -- It includes data types for the request/response payloads and a client function
---  -- using the 'wreq' library for HTTP communication.
+-- This module provides functionality to send requests to a reranking API
+-- (LLaMa.CPP based server) and parse the corresponding responses.
+-- It includes data types for the request/response payloads and a client function
+-- using the 'wreq' library for HTTP communication.
+--
+-- == Example Usage
 --  --
---  -- == Example Usage
---  --
---  -- > import qualified Reranker.Client as RC
---  -- > import qualified Data.Text as T
---  -- > import Data.Either (Either(..))
---  -- >
---  -- > main :: IO ()
---  -- > main = do
---  -- >     let rerankerUrl = "http://127.0.0.1:8089/v1/rerank" -- Your reranker API endpoint
---  -- >     let userQuery = T.pack "What is the capital of France?"
---  -- >     let documentsToRerank =
---  -- >           [ T.pack "Paris is the capital of France."
---  -- >           , T.pack "Lyon is a major city in France."
---  -- >           , T.pack "The Eiffel Tower is in Paris."
---  -- >           ]
---  -- >     let numResults = 5 -- Corresponds to top_n in the request
---  -- >
---  -- >     putStrLn "Sending documents for reranking..."
---  -- >     eResponse <- RC.rerankDocuments rerankerUrl userQuery numResults documentsToRerank
---  -- >
---  -- >     case eResponse of
---  -- >       Left err -> putStrLn $ "Reranking failed: " ++ err
---  -- >       Right rerankResp -> do
---  -- >           putStrLn $ "Reranking successful using model: " ++ T.unpack (RC.rrpModel rerankResp)
---  -- >           putStrLn $ "Usage: " ++ show (RC.rrpUsage rerankResp)
---  -- >           putStrLn "Results:"
---  -- >           mapM_ print (RC.rrpResults rerankResp)
---  --
+-- > import qualified Reranker.Client as RC
+-- > import qualified Data.Text as T
+-- > import Data.Either (Either(..))
+-- >
+-- > main :: IO ()
+-- > main = do
+-- >     let rerankerTestData =  [ "The black bulbul (Hypsipetes leucocephalus), also known as the Himalayan black bulbul."
+-- >                             , "The Chinese Goose is an international breed of domestic goose."
+-- >                             , "The shoebill (Balaeniceps rex), also known as the whale-headed stork, and shoe-billed stork."
+-- >                             ] :: [T.Text]
+-- >         rerankerTestQuery = "What is the black bulbul?" :: T.Text
+-- >         
+-- >     rerankRes <- rerankDocuments "http://127.0.0.1:8089/v1/rerank" rerankerTestQuery 1 rerankerTestData
+-- >     case rerankRes of
+-- >         Left err -> putStrLn $ "Error: " ++ err
+-- >         Right rerankedResults -> do
+-- >             putStrLn "--- Reranked Results ---"
+-- >             print rerankedResults
+--
 module Reranker.Client (
     -- * Client Function
     rerankDocuments,
@@ -197,7 +190,7 @@ rerankDocuments apiUrl query topN docs = do
             if statusCode >= 200 && statusCode < 300
                 then -- Success: Try to parse the response body into RerankResponse
                     case A.eitherDecode responseBody of
-                        Left jsonErr -> return $ Left (printf "JSON decoding of successful response failed: %s\nRaw body: %s" jsonErr (show responseBody))
+                        Left jsonErr -> return $ Left (printf "JSON decoding failed: %s\nRaw body: %s" jsonErr (show responseBody))
                         Right rerankResp -> return $ Right rerankResp
                 else -- Reranker API returned an error status
                     -- Safely decode status message for inclusion in error
