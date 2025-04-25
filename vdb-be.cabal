@@ -29,6 +29,7 @@ library
       Weaviate.Query
       Weaviate.Client
       Weaviate.Response
+      Reranker.Client
   other-modules:
       Paths_vdb_be
   autogen-modules:
