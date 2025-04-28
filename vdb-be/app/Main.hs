@@ -5,8 +5,7 @@
 module Main (main) where
 
 -- Optional: if using generic deriving
-import qualified Data.Text               as T (Text, pack, unpack)
-import qualified Data.Text.IO            as TIO
+import qualified Data.Text               as T (Text, unpack)
 
 import Weaviate.Query as WQ ( mkHybridQuery, setLimit, setUserPrompt, setAlpha )
 
@@ -15,14 +14,12 @@ import Reranker.Client
 
 import Data.List (sortBy)
 import Data.Ord (comparing)
-import Control.Lens                 ((&), (.~), (^.))
 import Data.Aeson ((.=))
-import Network.Wai (Application, Request, Response, pathInfo, requestMethod, responseLBS, lazyRequestBody )
+import Network.Wai (Application, pathInfo, requestMethod, responseLBS, lazyRequestBody )
 import Network.Wai.Handler.Warp (run)
-import Network.HTTP.Types (status200, status405, status400, status404, status418)
+import Network.HTTP.Types (status200, status400, status404, status418)
 import Network.HTTP.Types.Header (hContentType)
-import qualified Data.ByteString.Lazy.Char8 as LBS
-import qualified Data.Aeson           as A (encode, object, Value, Result(..), fromJSON, eitherDecode)
+import qualified Data.Aeson           as A (encode, object, eitherDecode)
 
 import Core (RetrievalRequest(..), RetrievalResponse(..)) -- Import the data types for request and response    
 
@@ -43,9 +40,16 @@ rerankerEndpoint = "http://127.0.0.1:8089/v1/rerank"
 servicePort :: Int
 servicePort = 3000 -- Port for the WAI application
 
-fetchDocuments :: T.Text -> T.Text -> IO (Either String [T.Text])
-fetchDocuments query collection = do
-    let wvQuery =  WQ.mkHybridQuery collection >>= WQ.setLimit 15 >>= WQ.setAlpha 0.45 >>= WQ.setUserPrompt query
+-- | Fetch documents from Weaviate and rerank them using the Reranker service.
+-- parameters:
+fetchDocuments :: T.Text -> T.Text -> Int -> Int -> Double -> IO (Either String [T.Text])
+fetchDocuments collection query topK poolSize alpha = do
+    let wvQuery =   WQ.mkHybridQuery collection 
+                >>= WQ.setLimit topK 
+                >>= WQ.setAlpha alpha 
+                >>= WQ.setLimit poolSize
+                >>= WQ.setUserPrompt query
+                
     searchResult <- WC.weaviateHybridSearch weaviateEndpoint wvQuery
     case getDocuments searchResult of
         Left err -> return $ Left ("Error fetching documents: " ++ err)
@@ -55,14 +59,18 @@ fetchDocuments query collection = do
             case rerankRes of
                 Left err -> return $ Left ("Error reranking documents: " ++ err)
                 Right rerankedResults -> do
-                    return $ Right $ map -- Apply morphism to list
-                        fst     -- Morphism: Choose first element of tuple
-                        (sortBy -- Sort by relevance score
-                            (comparing $           -- Combinator, apply the following morphism to elements in list
-                                negate .           -- Negate to sort in descending order
-                                rrRelevanceScore . -- Take specified element of object.
-                                snd)               -- Take second element of tuple
-                        (zip decodedResponse $ rrpResults rerankedResults)) -- Pair documents with rerank results
+                    return $ Right $ 
+                        take maxDoc $ -- Take the top K documents
+                            map     -- Apply morphism to list
+                            fst     -- Morphism: Choose first element of tuple
+                            (sortBy -- Sort by relevance score
+                                (comparing $           -- Combinator, apply the following morphism to elements in list
+                                    negate .           -- Negate to sort in descending order
+                                    rrRelevanceScore . -- Take specified element of object.
+                                    snd)               -- Take second element of tuple
+                            (zip decodedResponse $ rrpResults rerankedResults)) -- Pair documents with rerank results
+                    where
+                        maxDoc = min topK $ length decodedResponse -- Ensure we don't exceed the number of documents
 
 hdleRequest :: Application
 hdleRequest request respond = do
@@ -79,7 +87,9 @@ hdleRequest request respond = do
         Right RetrievalRequest{..} -> do
             putStrLn $ "Processing valid request ID: " ++ T.unpack reqId
             -- 4. Call the (placeholder) business logic
-            retrievedDocs <- liftIO $ fetchDocuments reqQuery reqCollection -- Use liftIO as fetchDocuments is IO
+
+            -- Use liftIO as fetchDocuments is IO
+            retrievedDocs <- liftIO $ fetchDocuments reqCollection reqQuery reqTopK reqPoolSize reqAlpha
             case retrievedDocs of
                 -- 4a. Handle errors from fetchDocuments
                 Left err -> do
@@ -113,28 +123,15 @@ app request respond = do
             respond $ responseLBS status200 [(hContentType, "text/plain")] "OK"
         (_, []) -> do
             putStrLn "Received root request, responding with 200 OK."
-            respond $ responseLBS status200 [(hContentType, "text/plain")] "Request OK, but no specific endpoint matched.\nPlease refer to the documentation for more details."
+            respond $ responseLBS status200 [(hContentType, "text/plain")] "Request OK, but no specific endpoint matched. Please refer to the documentation for more details."
         (_, ["teapot"]) -> do
             putStrLn "Received a teapot request, responding with 418 I'm a teapot."
             respond $ responseLBS status418 [(hContentType, "text/plain")] "418 I'm a teapot"
         -- Handle anything else with 404 Not Found
         _ -> respond $ responseLBS status404 [(hContentType, "text/plain")] "Not Found"
 
--- Example Usage (main function)
 main :: IO ()
 main = do
-
-    --let mainQuery = "居家辦公" :: T.Text -- Example query
---
-    --putStrLn "Fetching documents from Weaviate vector database..."
-    ---- Fetch documents from Weaviate
-    --fetchResult <- fetchDocuments mainQuery "Document" -- Example collection name
-    --case fetchResult of
-    --    Left err -> putStrLn $ "Error: " ++ err
-    --    Right documents -> do
-    --        putStrLn "--- Retrieved Documents ---"
-    --        mapM_ TIO.putStrLn documents
-    --        putStrLn "End of documents."
 
     putStrLn $ "Document fetcher service listening on " ++ show servicePort ++ "..."
     run servicePort app

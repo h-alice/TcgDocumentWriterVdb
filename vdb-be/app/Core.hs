@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE RecordWildCards   #-} -- Optional, can make response construction cleaner
+{-# LANGUAGE InstanceSigs #-}
 
 module Core (
     RetrievalRequest(..),
@@ -9,22 +10,16 @@ module Core (
 ) where
 
 import GHC.Generics (Generic)
-import Control.Monad.IO.Class (liftIO) -- To lift IO actions into the WAI monad implicitly used
-
--- Web Server Core
-import Network.Wai ( Application, Request, Response, pathInfo, requestMethod, responseLBS, lazyRequestBody )
-import Network.Wai.Handler.Warp (run)
-import Network.HTTP.Types ( Status, status200, status404, status400, status405, hContentType )
 
 -- JSON Handling
-import Data.Aeson ( FromJSON(..), ToJSON(..), genericParseJSON, genericToJSON, eitherDecode', encode, object, (.=), (.:), withObject, Options(..) )
+import Data.Aeson ( FromJSON(..), ToJSON(..), object, (.=), (.:), withObject )
 import qualified Data.Aeson as Aeson
 
 -- Text and Bytestring
-import qualified Data.Text as T
 import Data.Text (Text)
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Char8 as BS (pack) -- For packing Content-Type header value
+ -- For packing Content-Type header value
+import Data.Aeson ((.:?), (.!=)) -- For optional fields in JSON parsing
+import Data.Aeson.Types (Parser) -- For custom parsing
 
 
 -- ========================================================================== --
@@ -36,6 +31,9 @@ data RetrievalRequest = RetrievalRequest
     { reqId  :: !Text            -- ^ User-provided request identifier. JSON key: "requestId".
     , reqCollection :: !Text     -- ^ The collection name to search in. JSON key: "collection".
     , reqQuery :: !Text          -- ^ The user's query string. JSON key: "query".
+    , reqTopK :: !Int            -- ^ The number of top results to return. JSON key: "topK".
+    , reqPoolSize :: !Int        -- ^ Optional: The number of documents to retrieve. JSON key: "poolSize".
+    , reqAlpha :: !Double   -- ^ Optional: The alpha parameter for hybrid search. JSON key: "alpha".
     } deriving (Show, Generic)   -- Generic needed if using generic Aeson instances
 
 -- | Represents the JSON structure of the response to be sent.
@@ -51,14 +49,18 @@ data RetrievalResponse = RetrievalResponse
 
 -- | RetrievalRequest from JSON.
 instance FromJSON RetrievalRequest where
+    parseJSON :: Aeson.Value -> Parser RetrievalRequest
     parseJSON = withObject "RetrievalRequest" $ \v -> RetrievalRequest
         <$> v .: "requestId"
         <*> v .: "collection"
         <*> v .: "query"
-
+        <*> v .: "topK" .!= 3
+        <*> v .:? "poolSize" .!= 20
+        <*> v .:? "alpha" .!= 0.5
 
 -- | Deserialize RetrievalResponse from JSON.
 instance ToJSON RetrievalResponse where
+    toJSON :: RetrievalResponse -> Aeson.Value
     toJSON RetrievalResponse{..} = object
         [ "requestId" .= respId
         , "documents" .= respDocuments
