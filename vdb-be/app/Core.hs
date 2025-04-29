@@ -1,3 +1,14 @@
+-- |
+-- Module      : Core
+-- Description : Core functionality for the retrieval and reranking server.
+-- Copyright   : (c) 2025 Wayne "h-alice" Hong
+-- License     : AGPL-3.0
+-- Maintainer  : admin@halice.art
+-- Stability   : experimental
+-- Portability : POSIX
+--
+-- This module defines the core data types.
+--
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric     #-}
@@ -11,14 +22,14 @@ module Core (
     RetrievalResponse(..)
 ) where
 
-import GHC.Generics (Generic, R)
+import GHC.Generics (Generic)
 
 -- JSON Handling
 import qualified Data.Aeson as Aeson
 
 -- Text and Bytestring
 import Data.Text (Text)
- -- For packing Content-Type header value
+-- For packing Content-Type header value
 import Data.Aeson ((.:?), (.!=), FromJSON(..), ToJSON(..), object, (.=), (.:), withObject) -- For optional fields in JSON parsing
 import Data.Aeson.Types (Parser) -- For custom parsing
 
