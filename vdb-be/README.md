@@ -137,4 +137,3 @@ The server will print log messages indicating the configuration loaded and the p
 ## License
 
 This project is licensed under the **AGPL-3.0**. See the `LICENSE` file for details.
-```
