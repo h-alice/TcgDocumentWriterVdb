@@ -29,7 +29,7 @@ import Data.Ord (comparing)
 import Text.Read (readMaybe)          -- For safely reading the port
 
 -- OS related libraries
-import System.IO (hPutStrLn, stderr) -- For printing errors/warnings
+import System.IO (hPutStrLn, stderr, stdout) -- For printing errors/warnings
 import System.Exit (exitFailure)      -- For exiting the program
 import System.Environment (lookupEnv) -- For reading configuration
 
@@ -231,12 +231,12 @@ hdleRequest conf request respond = do
     case A.eitherDecode body :: Either String RetrievalRequest of
         -- 3a. Handle JSON decoding errors
         Left err -> do
-            putStrLn $ "[handleRetrieval] JSON decoding failed: " ++ err
+            hPutStrLn stderr $ "[handleRetrieval] JSON decoding failed: " ++ err
             respond $ responseLBS status400 [(hContentType, "application/json")]
                         (A.encode $ A.object ["error" .= ("Invalid JSON request: " ++ err)])
         -- 3b. Process valid requests
         Right RetrievalRequest{..} -> do
-            putStrLn $ "[handleRetrieval] Processing valid request ID: " ++ T.unpack reqId
+            hPutStrLn stderr $ "[handleRetrieval] Processing valid request ID: " ++ T.unpack reqId
 
             -- 4. Call the core fetching and reranking logic function.
             --    Pass the loaded config and request parameters.
@@ -244,12 +244,12 @@ hdleRequest conf request respond = do
             case retrievedDocs of
                 -- 4a. Handle errors from fetchDocuments
                 Left err -> do
-                    putStrLn $  "[handleRetrieval] Error fetching documents for request ID: " ++ T.unpack reqId ++ ", error: " ++ err
+                    hPutStrLn stderr $  "[handleRetrieval] Error fetching documents for request ID: " ++ T.unpack reqId ++ ", error: " ++ err
                     respond $ responseLBS status500 [(hContentType, "application/json")]
                                 (A.encode $ A.object ["error" .= ("Error fetching documents: " ++ err)])
                 -- 4b. Successfully retrieved documents
                 Right docs -> do
-                    putStrLn $ "Successfully retrieved documents for request ID: " ++ T.unpack reqId
+                    hPutStrLn stderr $ "Successfully retrieved documents for request ID: " ++ T.unpack reqId
                     -- 5. Construct the successful response payload
                     let responsePayload = RetrievalResponse
                             { respId      = reqId -- Echo the request ID
@@ -278,7 +278,7 @@ app :: Config      -- ^ Application configuration
     -> Application -- ^ Resulting WAI Application
 app config request respond = do
     -- Log incoming request details (optional but helpful for debugging)
-    liftIO $ putStrLn $ "[app] Request received: " ++ show (requestMethod request) ++ " " ++ show (pathInfo request)
+    liftIO $ hPutStrLn stderr $ "[app] Request received: " ++ show (requestMethod request) ++ " " ++ show (pathInfo request)
     -- Route based on method and path segments
     case (requestMethod request, pathInfo request) of
         -- Handle POST requests to /retrieval, passing config to the handler
@@ -286,17 +286,17 @@ app config request respond = do
 
         -- Simple health check endpoint
         ("GET", ["health"]) -> do
-            liftIO $ putStrLn "[app] Health check request received."
+            liftIO $ hPutStrLn stderr "[app] Health check request received."
             respond $ responseLBS status200 [(hContentType, "text/plain; charset=utf-8")] "OK" -- Specify charset
 
         -- Optional: Respond nicely to root path requests
         (_, []) -> do
-            liftIO $ putStrLn "[app] Root path request received."
+            liftIO $ hPutStrLn stderr "[app] Root path request received."
             respond $ responseLBS status200 [(hContentType, "text/plain; charset=utf-8")] "Service is running. Use POST /retrieval for document retrieval." -- Specify charset
 
         -- Optional: Fun teapot endpoint
         (_, ["teapot"]) -> do
-            liftIO $ putStrLn "[app] Teapot request received."
+            liftIO $ hPutStrLn stderr "[app] Teapot request received."
             respond $ responseLBS status418 [(hContentType, "text/plain; charset=utf-8")] "418 I'm a teapot" -- Specify charset
 
         -- Handle method not allowed for known paths with wrong method
@@ -321,13 +321,13 @@ main = do
     conf <- loadConfig
 
     -- Print loaded config
-    putStrLn   "Configuration loaded:"
-    putStrLn $ "  Weaviate Endpoint: " ++ weaviateEndpoint conf
-    putStrLn $ "  Reranker Endpoint: " ++ rerankerEndpoint conf
-    putStrLn $ "  Server Address:    " ++ serverAddr conf -- Currently hardcoded
-    putStrLn $ "  Service Port:      " ++ show (serverPort conf)
+    hPutStrLn stderr   "Configuration loaded:"
+    hPutStrLn stderr $ "  Weaviate Endpoint: " ++ weaviateEndpoint conf
+    hPutStrLn stderr $ "  Reranker Endpoint: " ++ rerankerEndpoint conf
+    hPutStrLn stderr $ "  Server Address:    " ++ serverAddr conf -- Currently hardcoded
+    hPutStrLn stderr $ "  Service Port:      " ++ show (serverPort conf)
 
-    putStrLn $ "Document retrieval service starting on port " ++ show (serverPort conf) ++ "..."
+    hPutStrLn stderr $ "Document retrieval service starting on port " ++ show (serverPort conf) ++ "..."
     
     -- Run the Warp server, passing configuration to the main application logic
     run (serverPort conf) (app conf)
