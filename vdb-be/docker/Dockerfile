@@ -37,7 +37,7 @@ RUN cabal install exe:rr-server --install-method=copy --installdir=/app/bin --ov
 # Stage 2: Runtime Stage (using Alpine)
 #---------------------------------------------------------------------
 # Use a specific Alpine version for stability
-FROM alpine:3.19 AS final
+FROM alpine:3.20 AS final
 # Or use alpine:latest
 
 # --- Install Runtime Dependencies ---
@@ -46,10 +46,14 @@ FROM alpine:3.19 AS final
 # explicitly built against musl, though often GMP/zlib are the main ones.
 RUN apk add --no-cache \
     gmp     \
+    musl    \
+    gcompat \
     libffi  \
     zlib    \
-    libc6-compat
-    
+    libc6-compat \
+    libstdc++ \
+    libgcc 
+
 # --- Application Setup ---
 WORKDIR /app
 
