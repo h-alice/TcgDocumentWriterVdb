@@ -1,0 +1,121 @@
+# Docker compose
+services:
+  retrieve-service:
+    build:
+      context: ./vdb-be 
+    image: h-alice/retrieve-service  # Image name for the built service
+    container_name: retrieve_service # Optional: sets a predictable container name
+    env_file:
+      - .env # Load environment variables from the .env file
+    ports:
+      # Expose the port defined in .env (or default 3000) on the host
+      - "${SERVER_PORT:-3000}:${SERVER_PORT:-3000}"
+    depends_on:
+      - weaviate # Ensure weaviate is started before this service
+      - reranker # Ensure reranker is started before this service
+    restart: unless-stopped
+    networks:
+      - internal # Explicitly define network usage (optional but good practice)
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.30.0
+    container_name: weaviate # Optional: sets a predictable container name
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8080'
+      - --scheme
+      - http
+    ports:
+      - "8080:8080" # Weaviate API port
+      - "50051:50051" # Weaviate gRPC port
+    depends_on:
+      - embedding # Ensure embedding is started before this service
+    volumes:
+      # Mount a host directory to persist Weaviate data.
+      # './weaviate_data' will be created relative to the docker-compose.yml file if it doesn't exist.
+      - ./weaviate_data:/var/lib/weaviate
+    environment:
+      # Pass necessary environment variables from the .env file
+      OPENAI_APIKEY: ${OPENAI_APIKEY}
+      QUERY_DEFAULTS_LIMIT: ${QUERY_DEFAULTS_LIMIT}
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: ${AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED}
+      PERSISTENCE_DATA_PATH: ${PERSISTENCE_DATA_PATH}
+      DEFAULT_VECTORIZER_MODULE: "text2vec-openai"
+      ENABLE_MODULES: "text2vec-openai,generative-openai"
+      CLUSTER_HOSTNAME: "node1"
+    restart: on-failure:0 # Matches the original configuration
+    networks:
+      - internal
+
+  reranker:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: reranker # Optional: sets a predictable container name
+    volumes:
+      # Mount the host directory containing reranker models (defined in .env)
+      - "${MODEL_PATH}:/models:ro" # Mount read-only if models aren't modified by container
+    ports:
+      - "8089:8080" # Map host port 8089 to container port 8080
+    command:
+      - -m # Model file path inside container
+      - /models/bce-reranker-base_v1-q4_k_m.gguf
+      - -c # Context size
+      - '2048'
+      - -lv # Log level verbose
+      - '2'
+      - --reranking # Enable reranking mode
+      - --pooling # Enable pooling mode
+      - rank # Pooling type
+      - -ngl # Number of GPU layers
+      - '99' # Use a high number to offload as much as possible
+    restart: unless-stopped
+    networks:
+      - internal
+    # --- Optional GPU Configuration ---
+    # Uncomment the following 'deploy' section if you have NVIDIA GPUs and nvidia-docker installed
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all # Or specify a number of GPUs, e.g., 1
+    #           capabilities: [gpu]
+
+  embedding:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: embedding # Optional: sets a predictable container name
+    volumes:
+      # Mount the host directory containing embedding models (defined in .env)
+      - "${MODEL_PATH}:/models:ro" # Mount read-only
+    ports:
+      - "8087:8080" # Map host port 8087 to container port 8080
+    command:
+      - -c # Context size
+      - '2048'
+      - --embeddings # Enable embeddings mode
+      - -m # Model file path inside container
+      - /models/paraphrase-multilingual-MiniLM-L12-118M-v2-F16.gguf
+      - -ngl # Number of GPU layers
+      - '99' # Use a high number to offload as much as possible
+    restart: unless-stopped
+    networks:
+      - internal
+    # --- Optional GPU Configuration ---
+    # Uncomment the following 'deploy' section if you have NVIDIA GPUs and nvidia-docker installed
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all # Or specify a number of GPUs, e.g., 1
+    #           capabilities: [gpu]
+
+# Define the network (optional, Docker Compose creates a default one if omitted)
+networks:
+  internal:
+    driver: bridge
+
+# Define named volumes (optional, alternative to bind mounts like './weaviate_data')
+# volumes:
+#   weaviate_data_volume:
