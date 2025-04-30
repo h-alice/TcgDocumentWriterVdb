@@ -2,7 +2,7 @@
 # Stage 1: Build Stage (using a standard Haskell image)
 #---------------------------------------------------------------------
 # Use an official Haskell image with a specific GHC version for reproducibility
-FROM haskell:9.6 AS builder
+FROM haskell:9.6-slim AS builder
 # Or use haskell:latest if you prefer
 
 # Set the working directory inside the container
@@ -37,7 +37,7 @@ RUN cabal install exe:rr-server --install-method=copy --installdir=/app/bin --ov
 # Stage 2: Runtime Stage (using Alpine)
 #---------------------------------------------------------------------
 # Use a specific Alpine version for stability
-FROM alpine:3.20 AS final
+FROM alpine:3.21 AS final
 # Or use alpine:latest
 
 # --- Install Runtime Dependencies ---
@@ -46,8 +46,6 @@ FROM alpine:3.20 AS final
 # explicitly built against musl, though often GMP/zlib are the main ones.
 RUN apk add --no-cache \
     gmp     \
-    musl    \
-    gcompat \
     libffi  \
     zlib    \
     libc6-compat \
