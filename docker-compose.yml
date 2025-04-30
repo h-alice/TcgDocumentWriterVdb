@@ -27,9 +27,6 @@ services:
       - '8080'
       - --scheme
       - http
-    ports:
-      - "8080:8080" # Weaviate API port
-      - "50051:50051" # Weaviate gRPC port
     depends_on:
       - embedding # Ensure embedding is started before this service
     volumes:
@@ -55,8 +52,6 @@ services:
     volumes:
       # Mount the host directory containing reranker models (defined in .env)
       - "${MODEL_PATH}:/models:ro" # Mount read-only if models aren't modified by container
-    ports:
-      - "8089:8080" # Map host port 8089 to container port 8080
     command:
       - -m # Model file path inside container
       - /models/bce-reranker-base_v1-q4_k_m.gguf
@@ -88,8 +83,6 @@ services:
     volumes:
       # Mount the host directory containing embedding models (defined in .env)
       - "${MODEL_PATH}:/models:ro" # Mount read-only
-    ports:
-      - "8087:8080" # Map host port 8087 to container port 8080
     command:
       - -c # Context size
       - '2048'
