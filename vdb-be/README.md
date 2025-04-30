@@ -1,4 +1,4 @@
-# Haskell Retrieval & Reranking Service
+# Retrieval & Reranking Service
 
 ## Description
 
