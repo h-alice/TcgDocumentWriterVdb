@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  socat-proxy-weaviate:
+    image: alpine/socat
+    # Route HTTP traffic.
+    command: "TCP-LISTEN:${WEAVIATE_PORT},fork TCP:weaviate:${WEAVIATE_PORT}"
+    container_name: socat-proxy-weaviate
+    ports:
+      - "${EXPORT_WEAVIATE_PORT}:${WEAVIATE_PORT}" # Map host port 8888 to socat's listening port
+    networks:
+      - internal
+    depends_on:
+      - weaviate
+  
+  socat-proxy-weaviate-grpc:
+    image: alpine/socat
+    # Route gRPC traffic.
+    command: "TCP-LISTEN:${WEAVIATE_GRPC_PORT},fork TCP:weaviate:${WEAVIATE_GRPC_PORT}"
+    container_name: socat-proxy-weaviate-grpc
+    ports:
+      - "${EXPORT_WEAVIATE_GRPC_PORT}:${WEAVIATE_GRPC_PORT}" # Map host port 8888 to socat's listening port
+    networks:
+      - internal
+    depends_on:
+      - weaviate

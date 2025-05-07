@@ -15,6 +15,9 @@ services:
     restart: unless-stopped
     networks:
       - internal # Explicitly define network usage (optional but good practice)
+    environment:
+      WEAVIATE_ENDPOINT: "http://weaviate:${WEAVIATE_PORT}/v1/graphql"
+      RERANKER_ENDPOINT: "http://reranker:${RERANKER_PORT}/v1/rerank"
     healthcheck:
       test: curl --fail "http://localhost:${SERVER_PORT:-3000}/health" || exit 1
       interval: 40s
