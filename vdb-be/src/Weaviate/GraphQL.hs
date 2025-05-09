@@ -98,7 +98,7 @@ graphQLQueryTemplate :: String
 graphQLQueryTemplate = " \
 \ query HybridSearch($q: String!, $a: Float!) { \
 \   Get { \
-\     %s ( \
+\     Chunk ( \
 \       hybrid: { \
 \         query: $q, \
 \         alpha: $a, \
@@ -109,6 +109,11 @@ graphQLQueryTemplate = " \
 \        content \
 \        summary \
 \        _additional { score explainScore id } \
+\        orig { \
+\          ... on Document { \
+\            content \
+\          } \
+\        } \
 \     } \
 \   } \
 \ }"
@@ -119,9 +124,9 @@ graphQLQueryTemplate = " \
 --   Example: `mkGraphQLQueryCL "MyDocs" 5` would produce the query string
 --            with `MyDocs` and `limit: 5` inserted.
 mkGraphQLQueryCL :: T.Text   -- ^ The name of the Weaviate collection.
-                 -> Int    -- ^ The desired result limit (must be non-negative).
-                 -> String -- ^ The fully formed GraphQL query string.
-mkGraphQLQueryCL collectionName limit = printf graphQLQueryTemplate (T.unpack collectionName) limit
+                    -> Int    -- ^ The desired result limit (must be non-negative).
+                    -> String -- ^ The fully formed GraphQL query string.
+mkGraphQLQueryCL collectionName limit = printf graphQLQueryTemplate limit
 
 
 -- | Represents the standard structure of a GraphQL request payload,

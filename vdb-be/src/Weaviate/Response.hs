@@ -27,7 +27,8 @@
 --         {
 --           "_additional": { "id": "...", "score": "...", "explainScore": "..." },
 --           "content": "...",
---           "summary": "..."
+--           "summary": "...",
+--           "orig": [{ "content": "..." }] -- New field
 --           -- Potentially other fields defined in your Weaviate schema
 --         },
 --         -- ... more results
@@ -52,6 +53,7 @@ module Weaviate.Response
   , GetDocument(..)
   , QueryResult(..)
   , AdditionalInfo(..)
+  , OriginalDocument(..) -- --- ADDED: Export new type
     -- * Decoding Note
     -- | Use 'Data.Aeson.eitherDecode' or 'Data.Aeson.decode' from the @aeson@
     --   library to parse a JSON 'BL.ByteString' into a 'WeaviateResponse'.
@@ -92,12 +94,26 @@ instance FromJSON AdditionalInfo where
             _ -> fail $ "Could not parse 'score' field value as Double: " ++ T.unpack scoreText
 
 
+-- --- ADDED: Data type for the objects within the 'orig' array
+-- | Represents an original document snippet, typically containing its content.
+data OriginalDocument = OriginalDocument
+    { odContent :: !T.Text -- ^ The content of the original document part. Maps to JSON key @\"content\"@.
+    } deriving (Show, Eq, Generic)
+
+-- --- ADDED: FromJSON instance for OriginalDocument
+instance FromJSON OriginalDocument where
+    parseJSON :: Value -> AesonTypes.Parser OriginalDocument
+    parseJSON = withObject "OriginalDocument" $ \v ->
+        OriginalDocument <$> v .: "content"
+
+
 -- | Represents a single document result within the results array.
 --   Includes standard fields like @content@ and @summary@, plus Weaviate metadata.
 data QueryResult = QueryResult
-    { qrAdditional :: !AdditionalInfo -- ^ Metadata like ID and score ('AdditionalInfo'). Maps to JSON key @\"_additional\"@.
-    , qrContent    :: !T.Text         -- ^ The main content field. Maps to JSON key @\"content\"@.
-    , qrSummary    :: !T.Text         -- ^ The summary field. Maps to JSON key @\"summary\"@.
+    { qrAdditional :: !AdditionalInfo    -- ^ Metadata like ID and score ('AdditionalInfo'). Maps to JSON key @\"_additional\"@.
+    , qrContent    :: !T.Text            -- ^ The main content field. Maps to JSON key @\"content\"@.
+    , qrSummary    :: !T.Text            -- ^ The summary field. Maps to JSON key @\"summary\"@.
+    , qrOrig       :: ![OriginalDocument] -- --- MODIFIED: Added 'orig' field. Maps to JSON key @\"orig\"@.
     -- Add other fields from your schema here if needed
     } deriving (Show, Eq, Generic)
 
@@ -108,6 +124,7 @@ instance FromJSON QueryResult where
         QueryResult <$> v .: "_additional"
                     <*> v .: "content"
                     <*> v .: "summary"
+                    <*> v .: "orig" -- --- MODIFIED: Parse the new 'orig' field
         -- If adding optional fields:
         -- <*> v .:? "optionalField" -- Needs Maybe type in QueryResult
 

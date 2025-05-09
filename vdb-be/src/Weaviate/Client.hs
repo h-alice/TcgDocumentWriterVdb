@@ -75,7 +75,7 @@ module Weaviate.Client (
 -- Internal Library Imports
 import Weaviate.Query (HybridQuery(..))
 import Weaviate.GraphQL (mkGraphQLQueryCL, GraphQLRequest(..))
-import Weaviate.Response (WeaviateResponse(..), GetResponseData(..), GetDocument(..), QueryResult(..))
+import Weaviate.Response (WeaviateResponse(..), GetResponseData(..), GetDocument(..), QueryResult(..), OriginalDocument(..))
 
 -- External Library Imports
 import qualified Data.Aeson           as A (encode, object, Value, Result(..), fromJSON, eitherDecode)
@@ -138,7 +138,13 @@ weaviateHybridSearch weaviateUrl (Right hq) = do
                     in return $ Left (printf "Weaviate request failed with status %d: %s Response body: %s"
                                     statusCode (T.unpack statusMsgText) (show responseBody))
 
-getDocuments :: Either String A.Value 
+origDocument :: QueryResult -> T.Text
+origDocument qr =
+    case qrOrig qr of
+        [] -> ""
+        (doc:_) -> odContent doc
+
+getDocuments :: Either String A.Value
                     -> Either String [T.Text]
 
 -- Case 1: Input was already an error from weaviateHybridSearch pipeline      
@@ -156,4 +162,4 @@ getDocuments (Right jsonValue) =
                     -- Check if empty and return results
                     in if null results
                         then Left "No similar documents found in the response."
-                        else Right $ map qrContent results
+                        else Right $ filter (/= "") $ map origDocument results
