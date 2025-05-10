@@ -55,23 +55,27 @@ services:
       - internal
 
   reranker:
-    image: ghcr.io/ggerganov/llama.cpp:server
+    image: ghcr.io/ggerganov/llama.cpp:server-cuda
     container_name: reranker # Optional: sets a predictable container name
     volumes:
       # Mount the host directory containing reranker models (defined in .env)
       - "${MODEL_PATH}:/models:ro" # Mount read-only if models aren't modified by container
     command:
-      - -m # Model file path inside container
-      - /models/bce-reranker-base_v1-q4_k_m.gguf
-      - -c # Context size
-      - '2048'
-      - -lv # Log level verbose
-      - '2'
+      - rank        # Pooling type
+      - -m          # Model file path inside container
+      - /models/bge-reranker-v2-m3-q8_0.gguf # Adjust model as needed
+      - -c          # Context size
+      - '8192'      # Context size of BGE reranker, adjust as needed.
       - --reranking # Enable reranking mode
-      - --pooling # Enable pooling mode
-      - rank # Pooling type
-      - -ngl # Number of GPU layers
-      - '99' # Use a high number to offload as much as possible
+      - --pooling   # Enable pooling mode
+      - -ngl        # Number of GPU layers
+      - '99'        # Use a high number to offload as much as possible
+      - '-b'        # Batch size
+      - '8192'      # Batch size for reranking, adjust as needed.
+      - '-ub'       # Physical batch size 
+      - '8192'      # Physical batch size for reranking.
+      # - -lv # Log level verbose
+      # - '2' # Log level set to verbose for detailed output.
     restart: unless-stopped
     networks:
       - internal
@@ -85,17 +89,17 @@ services:
               capabilities: [gpu]
 
   embedding:
-    image: ghcr.io/ggerganov/llama.cpp:server
+    image: ghcr.io/ggerganov/llama.cpp:server-cuda
     container_name: embedding # Optional: sets a predictable container name
     volumes:
       # Mount the host directory containing embedding models (defined in .env)
       - "${MODEL_PATH}:/models:ro" # Mount read-only
     command:
-      - -c # Context size
-      - '2048'
       - --embeddings # Enable embeddings mode
       - -m # Model file path inside container
       - /models/paraphrase-multilingual-MiniLM-L12-118M-v2-F16.gguf
+      - -c # Context size
+      - '2048'
       - -ngl # Number of GPU layers
       - '99' # Use a high number to offload as much as possible
     restart: unless-stopped
