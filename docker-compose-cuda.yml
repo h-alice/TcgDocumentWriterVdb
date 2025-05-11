@@ -61,13 +61,13 @@ services:
       # Mount the host directory containing reranker models (defined in .env)
       - "${MODEL_PATH}:/models:ro" # Mount read-only if models aren't modified by container
     command:
-      - rank        # Pooling type
+      - --reranking # Enable reranking mode
       - -m          # Model file path inside container
       - /models/bge-reranker-v2-m3-q8_0.gguf # Adjust model as needed
       - -c          # Context size
       - '8192'      # Context size of BGE reranker, adjust as needed.
-      - --reranking # Enable reranking mode
       - --pooling   # Enable pooling mode
+      - rank        # Pooling type
       - -ngl        # Number of GPU layers
       - '99'        # Use a high number to offload as much as possible
       - '-b'        # Batch size
