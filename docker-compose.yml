@@ -1,4 +1,3 @@
-# Docker compose
 services:
   retrieve-service:
     build:
@@ -16,6 +15,15 @@ services:
     restart: unless-stopped
     networks:
       - internal # Explicitly define network usage (optional but good practice)
+    environment:
+      WEAVIATE_ENDPOINT: "http://weaviate:${WEAVIATE_PORT}/v1/graphql"
+      RERANKER_ENDPOINT: "http://reranker:${RERANKER_PORT}/v1/rerank"
+    healthcheck:
+      test: curl --fail "http://localhost:${SERVER_PORT:-3000}/health" || exit 1
+      interval: 40s
+      timeout: 30s
+      retries: 3
+      start_period: 60s
 
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.30.0
@@ -67,15 +75,6 @@ services:
     restart: unless-stopped
     networks:
       - internal
-    # --- Optional GPU Configuration ---
-    # Uncomment the following 'deploy' section if you have NVIDIA GPUs and nvidia-docker installed
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all # Or specify a number of GPUs, e.g., 1
-    #           capabilities: [gpu]
 
   embedding:
     image: ghcr.io/ggerganov/llama.cpp:server
@@ -94,15 +93,6 @@ services:
     restart: unless-stopped
     networks:
       - internal
-    # --- Optional GPU Configuration ---
-    # Uncomment the following 'deploy' section if you have NVIDIA GPUs and nvidia-docker installed
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all # Or specify a number of GPUs, e.g., 1
-    #           capabilities: [gpu]
 
 # Define the network (optional, Docker Compose creates a default one if omitted)
 networks:
