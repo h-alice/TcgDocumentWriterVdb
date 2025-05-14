@@ -98,6 +98,9 @@ services:
 networks:
   internal:
     driver: bridge
+    ipam:
+      config:
+        - subnet: '198.19.0.0/16'   # Critical for Weaviate innitialization
 
 # Define named volumes (optional, alternative to bind mounts like './weaviate_data')
 # volumes:
