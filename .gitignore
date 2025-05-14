@@ -1,3 +1,4 @@
 models/
 weaviate_data/
 .venv/
+.DS_Store
