@@ -8,7 +8,7 @@ services:
       - .env # Load environment variables from the .env file
     ports:
       # Expose the port defined in .env (or default 3000) on the host
-      - "${SERVER_PORT:-3000}:${SERVER_PORT:-3000}"
+      - "${SERVER_PORT:-3000}:3000"
     depends_on:
       - weaviate # Ensure weaviate is started before this service
       - reranker # Ensure reranker is started before this service
