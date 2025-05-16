@@ -1,0 +1,16 @@
+services:
+  vdb-demo-fe:
+    image: h-alice/vdb-demo:latest
+    depends_on:
+      - retrieve-service
+    restart: unless-stopped
+    networks:
+      - internal
+      - gateway
+    environment:
+      RETRIEVAL_ENDPOINT: "http://retrieve-service:3000/retrieval"
+      
+networks:
+  gateway:
+    external: true
+    name: gateway
