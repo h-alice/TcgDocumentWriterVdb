@@ -9,6 +9,7 @@ services:
       - gateway
     environment:
       RETRIEVAL_ENDPOINT: "http://retrieve-service:3000/retrieval"
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: "doit-gpu-node1.gov.taipei"
     command:
       - npm
       - run
