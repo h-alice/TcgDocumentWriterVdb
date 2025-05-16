@@ -9,6 +9,10 @@ services:
       - gateway
     environment:
       RETRIEVAL_ENDPOINT: "http://retrieve-service:3000/retrieval"
+    command:
+      - npm
+      - run
+      - dev
       
 networks:
   gateway:
