@@ -1,5 +1,13 @@
 # Retrieval & Reranking Service
 
+
+## Docker (Recommended)
+
+We commanded using Docker to start the full service with Weaviate and Reranker.
+
+Check the readme in root repository for more details.
+
+
 ## Description
 
 This project provides a high-performance Haskell web service built with the Warp server. It's designed to act as a backend component that:
@@ -97,6 +105,21 @@ The server will print log messages indicating the configuration loaded and the p
         * `alpha` (Double): The weighting for Weaviate's hybrid search (0.0 = pure keyword, 1.0 = pure vector, 0.5 = balanced).
 
     *(Note: The exact structure of `queryParams` depends on the `RetrievalParameters` type defined in `Core.hs`)*
+
+    **curl Example:**
+
+    ```bash
+    curl -X POST -H "Content-Type: application/json" -d '{
+      "requestId": "user-request-id-123",
+      "query": "What is black bulbul?",
+      "collection": "Document",
+      "queryParams": {
+        "topK": 5,
+        "poolSize": 50,
+        "alpha": 0.5
+      }
+    }' http://localhost:3000/retrieval
+    ```
 
 * **Success Response (200 OK):** `application/json`
 
