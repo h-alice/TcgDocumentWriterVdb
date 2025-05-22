@@ -1,5 +1,13 @@
 # Retrieval & Reranking Service
 
+
+## Docker (Recommended)
+
+We commanded using Docker to start the full service with Weaviate and Reranker.
+
+Check the readme in root repository for more details.
+
+
 ## Description
 
 This project provides a high-performance Haskell web service built with the Warp server. It's designed to act as a backend component that:
