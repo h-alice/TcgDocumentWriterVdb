@@ -106,6 +106,21 @@ The server will print log messages indicating the configuration loaded and the p
 
     *(Note: The exact structure of `queryParams` depends on the `RetrievalParameters` type defined in `Core.hs`)*
 
+    **curl Example:**
+
+    ```bash
+    curl -X POST -H "Content-Type: application/json" -d '{
+      "requestId": "user-request-id-123",
+      "query": "What is black bulbul?",
+      "collection": "Document",
+      "queryParams": {
+        "topK": 5,
+        "poolSize": 50,
+        "alpha": 0.5
+      }
+    }' http://localhost:3000/retrieval
+    ```
+
 * **Success Response (200 OK):** `application/json`
 
     ```json
