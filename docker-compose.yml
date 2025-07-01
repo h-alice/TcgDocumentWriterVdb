@@ -62,16 +62,20 @@ services:
       - "${MODEL_PATH}:/models:ro" # Mount read-only if models aren't modified by container
     command:
       - -m # Model file path inside container
-      - /models/bce-reranker-base_v1-q4_k_m.gguf
+      - /models/bge-reranker-v2-m3-Q4_K_M.gguf
       - -c # Context size
       - '2048'
       - -lv # Log level verbose
-      - '2'
+      - '0'
       - --reranking # Enable reranking mode
       - --pooling # Enable pooling mode
       - rank # Pooling type
       - -ngl # Number of GPU layers
       - '99' # Use a high number to offload as much as possible
+      - '-b'        # Batch size
+      - '4096'      # Batch size for reranking, adjust as needed.
+      - '-ub'       # Physical batch size 
+      - '4096'      # Physical batch size for reranking.
     restart: unless-stopped
     networks:
       - internal
@@ -85,6 +89,8 @@ services:
     command:
       - -c # Context size
       - '2048'
+      - -lv # Log level verbose
+      - '0'
       - --embeddings # Enable embeddings mode
       - -m # Model file path inside container
       - /models/paraphrase-multilingual-MiniLM-L12-118M-v2-F16.gguf
