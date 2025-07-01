@@ -1,0 +1,95 @@
+# The debug compose is made for testing retrieval service,
+# this compose file will bring up *only* Weaviate, embedding, and reranker services.
+# 
+# You can use this with: 
+#   `docker compose -f docker-compose-debug.yml -f docker-compose-expose-weaviate.yml up`
+#
+# And don't forget to manually bring up the reranker, which is needed by retrieval service.
+services:
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.30.0
+    container_name: weaviate # Optional: sets a predictable container name
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8080'
+      - --scheme
+      - http
+    depends_on:
+      - embedding # Ensure embedding is started before this service
+    volumes:
+      # Mount a host directory to persist Weaviate data.
+      # './weaviate_data' will be created relative to the docker-compose.yml file if it doesn't exist.
+      - ./weaviate_data:/var/lib/weaviate
+    environment:
+      # Pass necessary environment variables from the .env file
+      OPENAI_APIKEY: ${OPENAI_APIKEY}
+      QUERY_DEFAULTS_LIMIT: ${QUERY_DEFAULTS_LIMIT}
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: ${AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED}
+      PERSISTENCE_DATA_PATH: ${PERSISTENCE_DATA_PATH}
+      DEFAULT_VECTORIZER_MODULE: "text2vec-openai"
+      ENABLE_MODULES: "text2vec-openai,generative-openai"
+      CLUSTER_HOSTNAME: "node1"
+    restart: on-failure:0 # Matches the original configuration
+    networks:
+      - internal
+
+  reranker:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: reranker # Optional: sets a predictable container name
+    volumes:
+      # Mount the host directory containing reranker models (defined in .env)
+      - "${MODEL_PATH}:/models:ro" # Mount read-only if models aren't modified by container
+    command:
+      - -m # Model file path inside container
+      - /models/bge-reranker-v2-m3-Q4_K_M.gguf
+      - -c # Context size
+      - '2048'
+      - -lv # Log level verbose
+      - '0'
+      - --reranking # Enable reranking mode
+      - --pooling # Enable pooling mode
+      - rank # Pooling type
+      - -ngl # Number of GPU layers
+      - '99' # Use a high number to offload as much as possible
+      - '-b'        # Batch size
+      - '4096'      # Batch size for reranking, adjust as needed.
+      - '-ub'       # Physical batch size 
+      - '4096'      # Physical batch size for reranking.
+    restart: unless-stopped
+    networks:
+      - internal
+
+  embedding:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: embedding # Optional: sets a predictable container name
+    volumes:
+      # Mount the host directory containing embedding models (defined in .env)
+      - "${MODEL_PATH}:/models:ro" # Mount read-only
+    command:
+      - -c # Context size
+      - '2048'
+      - -lv # Log level verbose
+      - '0'
+      - --embeddings # Enable embeddings mode
+      - -m # Model file path inside container
+      - /models/paraphrase-multilingual-MiniLM-L12-118M-v2-F16.gguf
+      - -ngl # Number of GPU layers
+      - '99' # Use a high number to offload as much as possible
+    restart: unless-stopped
+    networks:
+      - internal
+
+# Define the network (optional, Docker Compose creates a default one if omitted)
+networks:
+  internal:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: '198.19.0.0/16'   # Critical for Weaviate innitialization
+
+# Define named volumes (optional, alternative to bind mounts like './weaviate_data')
+# volumes:
+#   weaviate_data_volume:
