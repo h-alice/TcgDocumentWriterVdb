@@ -9,7 +9,7 @@ FROM haskell:9.6-slim AS builder
 WORKDIR /app
 
 
-# Copy stack.yaml and package.yaml or *.cabal and install dependencies
+# Copy stack.yaml and package.yaml and install dependencies
 COPY stack.yaml stack.yaml.lock ./
 COPY package.yaml ./
 RUN stack setup && stack build --only-dependencies

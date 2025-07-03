@@ -24,7 +24,7 @@ dependencies:
 - aeson
 - bytestring
 - lens
-- text 
+- text
 - wreq
 - unordered-containers
 - warp
