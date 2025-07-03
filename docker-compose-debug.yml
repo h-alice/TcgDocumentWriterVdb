@@ -1,29 +1,11 @@
+# The debug compose is made for testing retrieval service,
+# this compose file will bring up *only* Weaviate, embedding, and reranker services.
+# 
+# You can use this with: 
+#   `docker compose -f docker-compose-debug.yml -f docker-compose-expose-weaviate.yml up`
+#
+# And don't forget to manually bring up the reranker, which is needed by retrieval service.
 services:
-  retrieve-service:
-    build:
-      context: ./vdb-be 
-    image: h-alice/retrieve-service  # Image name for the built service
-    container_name: retrieve_service # Optional: sets a predictable container name
-    env_file:
-      - .env # Load environment variables from the .env file
-    ports:
-      # Expose the port defined in .env (or default 3000) on the host
-      - "${SERVER_PORT:-3000}:3000"
-    depends_on:
-      - weaviate # Ensure weaviate is started before this service
-      - reranker # Ensure reranker is started before this service
-    restart: unless-stopped
-    networks:
-      - internal # Explicitly define network usage (optional but good practice)
-    environment:
-      WEAVIATE_ENDPOINT: "http://weaviate:${WEAVIATE_PORT}/v1/graphql"
-      RERANKER_ENDPOINT: "http://reranker:${RERANKER_PORT}/v1/rerank"
-    healthcheck:
-      test: curl --fail "http://localhost:${SERVER_PORT:-3000}/health" || exit 1
-      interval: 40s
-      timeout: 30s
-      retries: 3
-      start_period: 60s
 
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.30.0
