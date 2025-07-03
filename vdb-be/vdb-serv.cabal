@@ -4,11 +4,11 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 
-name:           vdb-be
+name:           vdb-serv
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/vdb-be#readme>
-homepage:       https://github.com/githubuser/vdb-be#readme
-bug-reports:    https://github.com/githubuser/vdb-be/issues
+description:    Please see the README on GitHub at <https://github.com/githubuser/vdb-serv#readme>
+homepage:       https://github.com/githubuser/vdb-serv#readme
+bug-reports:    https://github.com/githubuser/vdb-serv/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2025 Author name here
@@ -21,73 +21,79 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/vdb-be
+  location: https://github.com/githubuser/vdb-serv
 
 library
   exposed-modules:
+      Reranker.Client
+      Weaviate.Client
       Weaviate.GraphQL
       Weaviate.Query
-      Weaviate.Client
       Weaviate.Response
-      Reranker.Client
   other-modules:
-      Paths_vdb_be
+      Paths_vdb_serv
   autogen-modules:
-      Paths_vdb_be
+      Paths_vdb_serv
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      aeson >=2.2.3.0 && <2.3
+      aeson
     , base >=4.7 && <5
-    , bytestring >=0.12.2 && <0.13
-    , lens >=5.3.4 && <5.4
-    , text >=2.1.2 && <2.2
-    , wreq >=0.5.4.3 && <0.6
-    , unordered-containers >= 0.2.20
+    , bytestring
+    , http-types
+    , lens
+    , text
+    , unordered-containers
+    , wai
+    , warp
+    , wreq
   default-language: Haskell2010
 
-executable rr-server
+executable vdb-serv-exe
   main-is: Main.hs
   other-modules:
       Core
-      Paths_vdb_be
+      Paths_vdb_serv
   autogen-modules:
-      Paths_vdb_be
+      Paths_vdb_serv
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson >=2.2.3.0 && <2.3
+      aeson
     , base >=4.7 && <5
-    , bytestring >=0.12.2 && <0.13
-    , lens >=5.3.4 && <5.4
-    , text >=2.1.2 && <2.2
-    , vdb-be
-    , wreq >=0.5.4.3 && <0.6
-    , unordered-containers >= 0.2.20
-    , warp >=3.4.7 && <3.5
-    , http-types >=0.12.4 && <0.13
-    , wai >=3.2.4 && <3.3
-
+    , bytestring
+    , http-types
+    , lens
+    , text
+    , unordered-containers
+    , vdb-serv
+    , wai
+    , warp
+    , wreq
   default-language: Haskell2010
 
-test-suite vdb-be-test
+test-suite vdb-serv-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Paths_vdb_be
+      Paths_vdb_serv
   autogen-modules:
-      Paths_vdb_be
+      Paths_vdb_serv
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      aeson >=2.2.3.0 && <2.3
+      aeson
     , base >=4.7 && <5
-    , bytestring >=0.12.2 && <0.13
-    , lens >=5.3.4 && <5.4
-    , text >=2.1.2 && <2.2
-    , vdb-be
-    , wreq >=0.5.4.3 && <0.6
+    , bytestring
+    , http-types
+    , lens
+    , text
+    , unordered-containers
+    , vdb-serv
+    , wai
+    , warp
+    , wreq
   default-language: Haskell2010
