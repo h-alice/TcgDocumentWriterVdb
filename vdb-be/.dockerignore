@@ -5,3 +5,4 @@ dist-newstyle/
 *.dyn_hi
 *.dyn_o
 .stack-work/
+bin/
