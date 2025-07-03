@@ -8,30 +8,18 @@ FROM haskell:9.6-slim AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
-# --- Dependency Caching ---
-# Copy the Cabal configuration files first
-COPY *.cabal ./
-# Copy cabal.project or cabal.project.freeze if they exist
-COPY cabal.project* ./
 
-# Install dependencies only. This layer is cached if config files don't change.
-# Update the package database
-RUN cabal update
-# Build only the dependencies
-RUN cabal build --only-dependencies
+# Copy stack.yaml and package.yaml or *.cabal and install dependencies
+COPY stack.yaml stack.yaml.lock ./
+COPY package.yaml ./
+RUN stack setup && stack build --only-dependencies
 
-# --- Build Application ---
-# Copy the rest of the application source code
+# Copy all source files
 COPY . .
 
-# Build the executable.
-# Using 'install' places the binary in a predictable location.
-# Adjust optimization flags (-O2) as needed.
-RUN cabal install exe:rr-server --install-method=copy --installdir=/app/bin --overwrite-policy=always -O2
-# Note: For truly minimal Alpine images, you might investigate static linking
-# by adding ghc-options like '-static -optl-static -optl-pthread' in your .cabal file,
-# but this can be complex and platform-dependent. Dynamic linking (default)
-# requires installing runtime dependencies in the final stage.
+# Build the application
+RUN stack build --copy-bins
+
 
 #---------------------------------------------------------------------
 # Stage 2: Runtime Stage (using Alpine)
@@ -56,8 +44,8 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 # Copy *only* the compiled executable from the 'builder' stage
-# Ensure 'rr-server' matches the executable name used in the build stage
-COPY --from=builder /app/bin/rr-server /app/rr-server
+# Ensure 'vdb-serv' matches the executable name used in the build stage
+COPY --from=builder /app/bin/vdb-serv-exe /app/vdb-serv-exe
 
 # --- Security Best Practice: Run as non-root user ---
 # Create a group and user
@@ -71,4 +59,4 @@ EXPOSE 3000
 
 # Command to run the executable when the container starts
 # Ensure the executable path is correct within the WORKDIR
-CMD ["./rr-server"]
+CMD ["./vdb-serv-exe"]
