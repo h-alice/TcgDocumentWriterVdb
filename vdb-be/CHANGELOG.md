@@ -10,5 +10,5 @@ and this project adheres to the
 ## 0.1.0.0 - 2025-04-30
 First working release!
 
-## 0.2.0.0 - 2025-07-01
+## 0.2.0.0 - 2025-07-03
 Change the retrieval service to support different collections.
