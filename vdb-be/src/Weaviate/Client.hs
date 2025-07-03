@@ -155,7 +155,8 @@ getDocuments (Left prevErr) =
 getDocuments (Right jsonValue) =
     -- Attempt to parse the JSON Value directly using fromJSON
     case A.fromJSON jsonValue :: A.Result WeaviateResponse of
-            A.Error parseErr -> Left $ "Failed to parse JSON Value into WeaviateResponse: " ++ parseErr
+            A.Error parseErr -> Left $ "Failed to parse JSON Value into WeaviateResponse: " ++ parseErr ++ 
+                "\nRaw JSON: " ++ show jsonValue
             A.Success wr ->
                 -- Extract results list
                 let results = gdResults . grdGet . wrData $ wr
