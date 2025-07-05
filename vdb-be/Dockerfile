@@ -26,6 +26,9 @@ RUN stack build --copy-bins
 #---------------------------------------------------------------------
 # Use a specific Alpine version for stability
 FROM alpine:3.21 AS final
+
+LABEL org.opencontainers.image.description="Dockerfile for the document retrieval service"
+
 # Or use alpine:latest
 
 # --- Install Runtime Dependencies ---
