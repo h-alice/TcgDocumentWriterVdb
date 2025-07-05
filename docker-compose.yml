@@ -55,7 +55,7 @@ services:
       - internal
 
   reranker:
-    image: ghcr.io/ggerganov/llama.cpp:server-b5797
+    image: ghcr.io/ggml-org/llama.cpp:server-b5797
     container_name: reranker # Optional: sets a predictable container name
     volumes:
       # Mount the host directory containing reranker models (defined in .env)
@@ -81,7 +81,7 @@ services:
       - internal
 
   embedding:
-    image: ghcr.io/ggerganov/llama.cpp:server-b5797
+    image: ghcr.io/ggml-org/llama.cpp:server-b5797
     container_name: embedding # Optional: sets a predictable container name
     volumes:
       # Mount the host directory containing embedding models (defined in .env)
