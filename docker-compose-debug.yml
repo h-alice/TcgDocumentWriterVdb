@@ -35,6 +35,11 @@ services:
     restart: on-failure:0 # Matches the original configuration
     networks:
       - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   reranker:
     image: ghcr.io/ggml-org/llama.cpp:server-b5797
@@ -61,6 +66,11 @@ services:
     restart: unless-stopped
     networks:
       - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   embedding:
     image: ghcr.io/ggml-org/llama.cpp:server-b5797
@@ -81,6 +91,11 @@ services:
     restart: unless-stopped
     networks:
       - internal
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 # Define the network (optional, Docker Compose creates a default one if omitted)
 networks:

@@ -12,6 +12,11 @@ services:
       - internal
     depends_on:
       - weaviate
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "3"
   
   socat-proxy-weaviate-grpc:
     image: alpine/socat
@@ -24,3 +29,8 @@ services:
       - internal
     depends_on:
       - weaviate
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
